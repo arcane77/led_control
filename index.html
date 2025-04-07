@@ -1,0 +1,384 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Device API Tests</title>
+        <script>
+            function getDateTimeString() {
+                const date = new Date();
+
+                return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+            }
+
+            async function postApiRequest(url = '', data = {}) {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    credentials: 'same-origin',
+                    redirect: 'follow',
+                    referrerPolicy: 'no-referrer',
+                    body: JSON.stringify(data)
+                });
+
+                return response.json();
+            }
+
+            function setElementText(elementId, data) {
+                const text = typeof data === "object" ? JSON.stringify(data) : data;
+                document.getElementById(elementId).innerText = text;
+            }
+
+            function getApiEndpoint() {
+                return document.getElementById("apiEndpoint").value;
+            }
+
+            function getSettings() {
+                setElementText("getDeviceSettingsResponse", `Getting Settings from device.`);
+                fetch(`${getApiEndpoint()}/api/settings`)
+                    .then((response) => response.json())
+                    .then((response) => {
+                        setElementText("getDeviceSettingsResponse", response);
+                    })
+                    .catch((error) => {
+                        setElementText("getDeviceSettingsResponse", error.message);
+                    });
+            }
+
+            function setSettings(timeZone) {
+                setElementText("changeDeviceSettingsResponse", `Setting time zone to device.`);
+                postApiRequest(`${getApiEndpoint()}/api/settings?timeZone=${timeZone}`)
+                    .then((response) => {
+                        setElementText("changeDeviceSettingsResponse", response);
+                    })
+                    .catch((error) => {
+                        setElementText("changeDeviceSettingsResponse", error.message);
+                    });
+            }
+
+            function getLedsApi() {
+                setElementText("getLedsColorApiResponse", `Getting LED colors from device.`);
+                fetch(`${getApiEndpoint()}/api/leds`)
+                    .then((response) => response.json())
+                    .then((response) => {
+                        setElementText("getLedsColorApiResponse", response);
+                    })
+                    .catch((error) => {
+                        setElementText("getLedsColorApiResponse", error.message);
+                    });
+            }
+
+            function postLedsApi(color, ledsOption) {
+                setElementText("setLedsColorApiResponse", `Setting LED color to ${color} for ${ledsOption}.`);
+                postApiRequest(`${getApiEndpoint()}/api/leds?color=${color.replace("#", "%23")}&leds=${ledsOption}`)
+                    .then((response) => {
+                        setElementText("setLedsColorApiResponse", response);
+                    })
+                    .catch((error) => {
+                        setElementText("setLedsColorApiResponse", `Error: ${error.message}`);
+                    });
+            }
+
+            function getNfcTagApi() {
+                setElementText("getNfcTagApiResponse", `Getting NFC tag from device.`);
+                fetch(`${getApiEndpoint()}/api/rfid`)
+                    .then((response) => response.json())
+                    .then((response) => {
+                        setElementText("getNfcTagApiResponse", response)
+                    })
+                    .catch((error) => {
+                        setElementText("getNfcTagApiResponse", error.message);
+                    });
+            }
+
+            function postNfcTag(scanNfcCallbackUrl) {
+                setElementText("scanNfcTagApiResponse", `Scanning NFC tag from device.`);
+                postApiRequest(`${getApiEndpoint()}/api/rfid?callbackUrl=${encodeURIComponent(scanNfcCallbackUrl)}`)
+                    .then((response) => {
+                        setElementText("scanNfcTagApiResponse", response)
+                    })
+                    .catch((error) => {
+                        setElementText("scanNfcTagApiResponse", error.message);
+                    });
+            }
+
+            function getDeviceSettings(event) {
+                event.preventDefault();
+
+                getSettings();
+            }
+
+            function changeDeviceSettings(event) {
+                event.preventDefault();
+
+                setSettings(event.target.timeZone.value);
+            }
+
+            function getLedDiodesColor(event) {
+                event.preventDefault();
+
+                getLedsApi();
+            }
+
+            function setLedDiodesColor(event) {
+                event.preventDefault();
+
+                postLedsApi(event.target.ledsColor.value, event.target.ledsOption.value);
+            }
+
+            function readNfcTag(event) {
+                event.preventDefault();
+
+                getNfcTagApi();
+            }
+
+            function scanNfcTag(event) {
+                event.preventDefault();
+
+                postNfcTag(event.target.scanNfcCallbackUrl.value);
+            }
+
+            setInterval(() => {
+                const dateTimeString = getDateTimeString();
+
+                setElementText("timePlaceholder", dateTimeString);
+            }, 1000);
+        </script>
+        <style>
+            html {
+                font-family: 'arial';
+            }
+
+            body {
+                background: white;
+                color: #333333;
+                padding: 15px;
+                margin: 0;
+            }
+
+            .title {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .title > h1 {
+                margin: 10px 0;
+            }
+
+            .title > div {
+                font-size: 18px;
+                font-weight: bold;
+                width: 170px;
+            }
+
+            .form-status-line {
+                margin-bottom: 15px;
+            }
+
+            .form-status-text {
+                font-weight: bold;
+            }
+
+            .form-elements-line {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .form-elements-line select {
+                height: 40px; font-size: 14px;
+            }
+
+            .form-elements-line select option {
+                zoom: 140%;
+                padding: 10px 0
+            }
+
+            .form-elements-line > *:not(:last-child) {
+                margin-right: 30px;
+            }
+
+            .form-element-label {
+                margin-right: 20px;
+            }
+
+            .form-input {
+                height: 40px;
+                font-size: 20px;
+                min-width: 400px;
+                margin-left: 15px;
+            }
+
+            .color-radio-buttons {
+                margin-bottom: 25px;
+            }
+
+            .color-radio-buttons > div {
+                display: flex;
+                align-items: center;
+            }
+
+            .color-radio-buttons input,
+            .color-option-radio-buttons input {
+                width: 25px;
+                height: 25px;
+                margin: 0 10px 0 0;
+            }
+
+            .color-option-radio-buttons,
+            .form-element-spacing {
+                margin-bottom: 15px;
+            }
+
+            .submit-button {
+                font-size: 14px;
+                font-weight: bold;
+                height: 45px;
+                width: 180px;
+                border: none;
+                margin: 0;
+                color: white;
+                background-color: green;
+                border-radius: 4px;
+                border: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="title">
+            <h1>Device API Test</h1>
+            <div id="timePlaceholder"></div>
+        </div>
+
+        <hr>
+        <h3>API Configuration</h3>
+        <div class="form-status-line">
+            Device API Endpoint:
+            <input id="apiEndpoint" class="form-input" value="http://127.0.0.1:3000" />
+        </div>
+
+        <hr>
+        <h3>Get Device LED diodes color</h3>
+        <form onsubmit="getLedDiodesColor(event)">
+            <div class="form-status-line">
+                Get LEDs color status: <span id="getLedsColorApiResponse" class="form-status-text"></span>
+            </div>
+            <button type="submit" class="submit-button">
+                Get LEDs color
+            </button>
+        </form>
+
+        <h3>Set Device LED diodes color</h3>
+        <form onsubmit="setLedDiodesColor(event)">
+            <div class="form-elements-line color-radio-buttons">
+                <div>
+                    <input type="radio" id="red" name="ledsColor" value="#B40500" checked>
+                    <label for="red">Red</label>
+                </div>
+                <div>
+                    <input type="radio" id="amber" name="ledsColor" value="#60ad60">
+                    <label for="amber">Amber</label>
+                </div>
+                <div>
+                    <input type="radio" id="crimson" name="ledsColor" value="#CB4646">
+                    <label for="crimson">Crimson</label>
+                </div>
+                <div>
+                    <input type="radio" id="yellow" name="ledsColor" value="#F1BA13">
+                    <label for="yellow">Yellow</label>
+                </div>
+                <div>
+                    <input type="radio" id="orange" name="ledsColor" value="#A5B40F">
+                    <label for="orange">Orange</label>
+                </div>
+                <div>
+                    <input type="radio" id="green" name="ledsColor" value="#00B40C">
+                    <label for="green">Green</label>
+                </div>
+                <div>
+                    <input type="radio" id="blue" name="ledsColor" value="#0515C0">
+                    <label for="blue">Blue</label>
+                </div>
+                <div>
+                    <input type="radio" id="black" name="ledsColor" value="#000000">
+                    <label for="black">Black</label>
+                </div>
+            </div>
+            <div class="form-elements-line color-option-radio-buttons">
+                <div>
+                    <input type="radio" id="all" name="ledsOption" value="all" checked>
+                    <label for="all">Both LEDs</label>
+                </div>
+                <div>
+                    <input type="radio" id="halo" name="ledsOption" value="halo">
+                    <label for="halo">Halo LEDs only</label>
+                </div>
+                <div>
+                    <input type="radio" id="logo" name="ledsOption" value="logo">
+                    <label for="logo">Logo LEDs only</label>
+                </div>
+            </div>
+            <div class="form-status-line">
+                Set LEDs color status: <span id="setLedsColorApiResponse" class="form-status-text"></span>
+            </div>
+            <button type="submit" class="submit-button">
+                Set LEDs color
+            </button>
+        </form>
+        
+        <hr>
+        <h3>Get Device Time zone</h3>
+        <form onsubmit="getDeviceSettings(event)">
+            <div class="form-status-line">
+                Get Device Settings status: <span id="getDeviceSettingsResponse" class="form-status-text"></span>
+            </div>
+            <button type="submit" class="submit-button">
+                Get device settings
+            </button>
+        </form>
+        <h3>Set Device Time zone</h3>
+        <form onsubmit="changeDeviceSettings(event)">
+            <div class="form-elements-line form-element-spacing">
+                <label class="form-element-label" for="timeZone">Select time zone</label>
+                <select id="timeZone" name="timeZone" value="Europe/Stockholm">
+                    <option value="Europe/Stockholm">Europe/Stockholm</option>
+                    <option value="Europe/London">Europe/London</option>
+                    <option value="America/New_York">America/New_York</option>
+                    <option value="Australia/Sydney">Australia/Sydney</option>
+                </select>
+            </div>
+            <div class="form-status-line">
+                Change Device Settings status: <span id="changeDeviceSettingsResponse" class="form-status-text"></span>
+            </div>
+            <button type="submit" class="submit-button">
+                Change device settings
+            </button>
+        </form>
+
+        <hr>
+        <h3>Read NFC tag</h3>
+        <form onsubmit="readNfcTag(event)">
+            <div class="form-status-line">
+                Get NFC tag status: <span id="getNfcTagApiResponse" class="form-status-text"></span>
+            </div>
+            <button type="submit" class="submit-button">
+                Get NFC tag
+            </button>
+        </form>
+        <h3>Scan NFC tag</h3>
+        <form onsubmit="scanNfcTag(event)">
+            <div class="form-elements-line form-element-spacing">
+                Callback URL:
+                <input id="scanNfcCallbackUrl" name="scanNfcCallbackUrl" class="form-input" value="http://192.168.0.1:8088/accept-rfid-scan" />
+            </div>
+            <div class="form-status-line">
+                Scan NFC tag status: <span id="scanNfcTagApiResponse" class="form-status-text"></span>
+            </div>
+            <button type="submit" class="submit-button">
+                Scan NFC tag
+            </button>
+        </form>
+    </body>
+</html>
